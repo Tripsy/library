@@ -1,7 +1,7 @@
 {
     "name": "tripsy/library",
     "description": "Happy library part of the Tripsy system",
-	"keywords": "api, caching, logging, templating, database, pdo, error, language",
+	"keywords": ["api", "caching", "logging", "templating", "database", "pdo", "error", "language"],
 	"license": "GPL-3.0-or-later",
 	"type": "library",
     "require": {
