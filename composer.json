@@ -20,6 +20,11 @@
         "ext-imagick": "*",
 		"phpoffice/phpspreadsheet": "^1.23"
     },
+    "autoload": {
+        "psr-4": {
+            "Tripsy\\Library\\": "src/"
+        }
+    },	
     "authors": [
         {
             "name": "David Gabriel",
