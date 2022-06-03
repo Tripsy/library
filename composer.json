@@ -1,6 +1,9 @@
 {
     "name": "tripsy/library",
     "description": "Happy library part of the Tripsy system",
+	"keywords": "api, caching, logging, templating, database, pdo, error, language",
+	"license": "GPL-3.0-or-later",
+	"type": "library",
     "require": {
 		"php": ">=8.0",
 		"ext-gd": "*",
@@ -16,5 +19,17 @@
         "ext-redis": "*",
         "ext-imagick": "*",
 		"phpoffice/phpspreadsheet": "^1.23"
+    },
+    "authors": [
+        {
+            "name": "David Gabriel",
+            "email": "gabriel.david@play-zone.ro",
+            "homepage": "https://www.play-zone.ro",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "gabriel.david@play-zone.ro",
+        "docs": "https://github.com/Tripsy/library/wiki"
     }	
 }
