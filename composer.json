@@ -1,0 +1,20 @@
+{
+    "name": "tripsy/library",
+    "description": "Happy library part of the Tripsy system",
+    "require": {
+		"php": ">=8.0",
+		"ext-gd": "*",
+        "ext-json": "*",
+        "ext-curl": "*",
+        "ext-ds": "*",
+        "ext-fileinfo": "*",
+        "ext-pdo": "*",
+        "symfony/mailer": "^6.0"
+    },
+    "suggested": {
+        "ext-apcu": "*",
+        "ext-redis": "*",
+        "ext-imagick": "*",
+		"phpoffice/phpspreadsheet": "^1.23"
+    }	
+}
