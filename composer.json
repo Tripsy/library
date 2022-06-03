@@ -3,6 +3,7 @@
     "description": "Happy library part of the Tripsy system",
 	"keywords": ["api", "caching", "logging", "templating", "database", "pdo", "error", "language"],
 	"license": "GPL-3.0-or-later",
+	"version": "1.0.0",
 	"type": "library",
     "require": {
 		"php": ">=8.0",
