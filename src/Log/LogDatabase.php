@@ -10,7 +10,7 @@ namespace Tripsy\Library\Log;
 
 use Tripsy\Library\Database\DatabaseException;
 use Tripsy\Library\Exceptions\ConfigException;
-use Tripsy\Library\Sql;
+use Tripsy\Library\Database\Sql;
 
 class LogDatabase extends Logger
 {

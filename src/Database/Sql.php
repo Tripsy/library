@@ -6,16 +6,11 @@
  *
  */
 
-namespace Tripsy\Library;
+namespace Tripsy\Library\Database;
 
 use PDO;
 use PDOException;
 use PDOStatement;
-use Tripsy\Library\Database\BuilderSql;
-use Tripsy\Library\Database\BuilderSqlData;
-use Tripsy\Library\Database\Connection;
-use Tripsy\Library\Database\ConnectionMysql;
-use Tripsy\Library\Database\DatabaseException;
 use Tripsy\Library\Exceptions\ConfigException;
 
 class Sql extends BuilderSql
@@ -26,11 +21,11 @@ class Sql extends BuilderSql
     private static array $items = [];
 
     /**
-     * Construct param / Config object / Used by debug function
+     * Debug output data
      *
-     * @var Config
+     * @var array
      */
-    private Config $cfg;
+    private array $debug_sql_data = [];
 
     /**
      * Construct param / builder data object
@@ -61,17 +56,14 @@ class Sql extends BuilderSql
     private PDOStatement $resource;
 
     /**
-     * @param string $ident
-     * @param Config $cfg
+     * @param Connection $connection
      * @param BuilderSqlData $data
      * @throws DatabaseException
      */
-    protected function __construct(string $ident, Config $cfg, BuilderSqlData $data)
+    protected function __construct(Connection $connection, BuilderSqlData $data)
     {
-        $this->cfg = $cfg;
         $this->data = $data;
-        $this->connection = new ConnectionMysql($this->cfg->get('mysql.' . $ident));
-
+        $this->connection = $connection;
         $this->instance = $this->connection->connect();
 
         parent::__construct($this->data);
@@ -87,15 +79,15 @@ class Sql extends BuilderSql
 
     /**
      * @param string $ident
-     * @param Config $cfg
+     * @param Connection $connection
      * @param BuilderSqlData $data
      * @return static
      * @throws DatabaseException
      */
-    public static function init(string $ident, Config $cfg, BuilderSqlData $data): self
+    public static function init(string $ident, Connection $connection, BuilderSqlData $data): self
     {
         if (!array_key_exists($ident, self::$items)) {
-            self::$items[$ident] = new self($ident, $cfg, $data);
+            self::$items[$ident] = new self($connection, $data);
         }
 
         return self::$items[$ident];
@@ -289,7 +281,7 @@ class Sql extends BuilderSql
 
                 $this->resource->execute();
 
-                $this->debugOutput($debugStartTime, 'run', $query, []);
+                $this->debugQueryOutput($debugStartTime, 'run', $query, []);
                 $this->reset();
             }
         } catch (PDOException $e) {
@@ -327,7 +319,7 @@ class Sql extends BuilderSql
 
             $this->resource->execute();
 
-            $this->debugOutput($debugStartTime, $type, $query, $bind);
+            $this->debugQueryOutput($debugStartTime, $type, $query, $bind);
             $this->reset();
         } catch (PDOException $e) {
             $message = array(
@@ -347,7 +339,7 @@ class Sql extends BuilderSql
      * @param array $bind
      * @return string
      */
-    public function debugQuery(string $query, array $bind): string
+    public function debugQueryOutputFormat(string $query, array $bind): string
     {
         $label = '';
 
@@ -358,7 +350,7 @@ class Sql extends BuilderSql
                 continue;
             }
 
-            $label = str_replace($this->cfg->get('folder.root'), '', $t['file']) . '::' . $t['line'];
+            $label = $t['file'] . '::' . $t['line'];
 
             break;
         }
@@ -389,41 +381,46 @@ class Sql extends BuilderSql
      * @param array $bind
      * @return void
      */
-    private function debugOutput(float $startTime, string $type, string $query, array $bind): void
+    private function debugQueryOutput(float $startTime, string $type, string $query, array $bind): void
     {
-        if ($this->cfg->get('debug.sql') === false) {
+        if ($this->connection->debug() === false) {
             return;
         }
 
         $sql_time = microtime(true) - $startTime;
-        $sql_count = $this->cfg->get('debug.sql_count') + 1;
-        $sql_output = $this->cfg->get('debug.sql_output');
-        $sql_output .= $sql_count . ') ' . $this->debugQuery($query, $bind);
-        $sql_output .= ($sql_time > $this->cfg->get('debug.sql_time')) ? ' (<strong>' . $sql_time . ' seconds</strong>)' : ' (' . $sql_time . ' seconds)';
+
+        $output = [];
+
+        $output['query'] = $this->debugQueryOutputFormat($query, $bind);
+        $output['time'] = $this->connection->setQueryFlag($sql_time) ? ' (<strong>' . $sql_time . ' seconds</strong>)' : ' (' . $sql_time . ' seconds)';
 
         switch ($type) {
             case 'select':
-                $sql_output .= ' ----> ' . $this->resource->rowCount() . ' result(s)';
+                $output['result'] =  ' ----> ' . $this->resource->rowCount() . ' result(s)';
                 break;
 
             case 'update':
-                $sql_output .= ' ----> ' . $this->resource->rowCount() . ' affected row(s)';
+                $output['result'] =  ' ----> ' . $this->resource->rowCount() . ' affected row(s)';
                 break;
 
             case 'delete':
-                $sql_output .= ' ----> ' . $this->resource->rowCount() . ' deleted row(s)';
+                $output['result'] =  ' ----> ' . $this->resource->rowCount() . ' deleted row(s)';
+                break;
+            default:
+                $output['result'] = '';
                 break;
         }
 
-        $sql_output .= '<br />';
-
-        //cfg -> update
-        $this->cfg->set('debug.sql_count', $sql_count);
-        $this->cfg->set('debug.sql_output', $sql_output);
+        $this->debug_sql_data[] = $output;
     }
 
-    public function debug()
+    /**
+     * Return data containing debug information about executed sql queries
+     *
+     * @return array
+     */
+    public function debugData(): array
     {
-        dump($this->cfg->get('debug.sql_output'));
+        return $this->debug_sql_data;
     }
 }

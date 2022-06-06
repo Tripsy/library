@@ -10,25 +10,36 @@ namespace Tripsy\Library\Cache;
 
 use Redis;
 use RedisException;
-use Tripsy\Library\Config;
 use Tripsy\Library\Exceptions\ConfigException;
 use Tripsy\Library\Exceptions\SystemException;
+use Tripsy\Library\Standard\ObjectTools;
 
 class RedisConnection
 {
     private static RedisConnection $instance;
-    private Config $cfg;
     private Redis $redis;
 
-    protected function __construct(Config $cfg)
+    /**
+     * @throws ConfigException
+     * @throws SystemException
+     */
+    protected function __construct(array $settings)
     {
         if (extension_loaded('redis') === false) {
             throw new ConfigException('Redis extension is not available.');
         }
 
-        $this->cfg = $cfg;
+        $config = ObjectTools::data($settings, [
+            'host' => 'string',
+            'port' => 'int',
+            'auth' => '?array'
+        ]);
 
-        $this->connect();
+        $this->connect(
+            $config->get('host'),
+            $config->get('port'),
+            $config->get('auth')
+        );
     }
 
     private function __clone()
@@ -40,14 +51,15 @@ class RedisConnection
     }
 
     /**
-     * @param Config $cfg
+     * @param array $settings
      * @return RedisConnection
      * @throws ConfigException
+     * @throws SystemException
      */
-    public static function init(Config $cfg): self
+    public static function init(array $settings): self
     {
         if (isset(self::$instance) === false) {
-            self::$instance = new self($cfg);
+            self::$instance = new self($settings);
         }
 
         return self::$instance;
@@ -56,18 +68,21 @@ class RedisConnection
     /**
      * Establish redis connection
      *
+     * @param string $host
+     * @param int $port
+     * @param array $auth
      * @return void
      * @throws SystemException
      */
-    private function connect(): void
+    private function connect(string $host, int $port, array $auth): void
     {
         try {
             $this->redis = new Redis();
 
-            $this->redis->pconnect($this->cfg->get('redis.host'), $this->cfg->get('redis.port'));
+            $this->redis->pconnect($host, $port);
 
-            if ($this->cfg->has('redis.auth')) {
-                $this->redis->auth($this->cfg->get('redis.auth'));
+            if ($auth) {
+                $this->redis->auth($auth);
             }
         } catch (RedisException $e) {
             throw new SystemException('Redis connection cannot be established.');

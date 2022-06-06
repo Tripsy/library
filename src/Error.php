@@ -42,7 +42,6 @@ class Error
      */
     public function __construct(Language $language)
     {
-        //vars
         $this->language = $language;
     }
 

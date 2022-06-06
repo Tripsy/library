@@ -55,6 +55,15 @@ class ObjectTools
                 if (get_debug_type($data->get($key)) != $type) {
                     throw new ConfigException('Map key (eg: ' . $key . ') is not ' . $type);
                 }
+            } else {
+                switch ($type) {
+                    case 'array':
+                        $data->put($key, []);
+                        break;
+                    case 'string':
+                        $data->put($key, '');
+                        break;
+                }
             }
         }
 

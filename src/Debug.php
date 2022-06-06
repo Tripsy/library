@@ -10,6 +10,7 @@ namespace Tripsy\Library;
 
 use Illuminate\Container\Container;
 use Tripsy\Library\Database\DatabaseException;
+use Tripsy\Library\Database\Sql;
 use Tripsy\Library\Exceptions\EmailException;
 use Tripsy\Library\Exceptions\TemplateException;
 use Tripsy\Library\Log\LogDatabase;
@@ -315,7 +316,15 @@ class Debug
 
         if ($mode == 'email') {
             try {
-                Container::getInstance()->make(Emailer::class)
+                Container::getInstance()->makeWith(Emailer::class, [
+                    'from.email' => $this->cfg->get('mail.from.email'),
+                    'from.name' =>  $this->cfg->get('mail.from.name'),
+                    'smtp.host' => $this->cfg->get('mail.smtp.host'),
+                    'smtp.port' => $this->cfg->get('mail.smtp.port'),
+                    'smtp.username' => $this->cfg->get('mail.smtp.username'),
+                    'smtp.password' => $this->cfg->get('mail.smtp.password'),
+                    'debug' => $this->cfg->get('mail.debug'),
+                ])
                     ->addTo($this->cfg->get('debug.report.email'))
                     ->setSubject($this->cfg->get('debug.report.subject'))
                     ->setContent($content)
@@ -329,7 +338,7 @@ class Debug
                     ]);
                 } catch (DatabaseException $e) {
                     try {
-                        Container::getInstance()->make(LogFile::class)->debug($e->getMessage(), [
+                        Container::getInstance()->makeWith(LogFile::class, ['pathLogs' => $this->cfg->get('path.logs')])->debug($e->getMessage(), [
                             'file' => __FILE__,
                             'line' => __LINE__,
                         ]);
@@ -343,7 +352,7 @@ class Debug
         $this->maintenance($maintenance, $vars);
     }
 
-    public function panel(): string
+    public function panel(Sql $sql): string
     {
         if ($this->enable() === false) {
             return '';
@@ -363,10 +372,15 @@ class Debug
             return str_replace($this->cfg->get('folder.root'), '', $output);
         };
 
+        $sql_data = $sql->debugData();
+        $sql_data = array_map(function($v) {
+            return str_replace($this->cfg->get('folder.root'), '', $v);
+        }, $sql_data);
+
         return template($this->cfg->get('folder.root') . $this->cfg->get('folder.templates') . '/' . 'debug.html', 'file_absolute')
             ->assign('loadTime', round(microtime(true) - $this->cfg->get('debug.time'), 4))
             ->assign('memory_usage', number_format((memory_get_usage(false) / (1024 * 1024)), 2))
-            ->assign('sql_output', $this->cfg->get('debug.sql_output'))
+            ->assign('sql_data', $sql_data)
             ->assign('array_cookie', $this->output($_COOKIE, '_COOKIE', true, 'string'))
             ->assign('array_get', $this->output($_GET, '_GET', true, 'string'))
             ->assign('array_post', $this->output($_POST, '_POST', true, 'string'))

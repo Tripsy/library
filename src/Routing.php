@@ -222,6 +222,7 @@ class Routing
     public function resolve(string $request_uri): void
     {
         $route_key = $this->getRouteKey($this->site_pattern);
+
         if (empty($this->routes[$route_key])) {
             throw new ConfigException('There are not routes defined for pattern `' . $route_key . '`');
         }
@@ -231,11 +232,12 @@ class Routing
         foreach ($this->routes[$route_key] as $route) {
             if (preg_match('/^' . $route->get('match') . '/', $request_uri, $match)) {
 
-                if ($route->hasKey('request')) {
+                if (empty($route->get('request')) === false) {
                     if (in_array($request_method, $route->get('request')) === false) {
                         continue;
                     }
                 }
+
                 if (empty($match['controller']) === false) {
                     $route->put('controller', $match['controller']);
                 }
@@ -244,7 +246,7 @@ class Routing
                     $route->put('method', $match['method']);
                 }
 
-                if ($route->hasKey('permission')) {
+                if ($route->get('permission')) {
                     $route->put('permission', StringTools::interpolate($route->get('permission'), [
                         'controller' => $route->get('controller'),
                         'method' => $route->get('method'),
@@ -255,7 +257,7 @@ class Routing
                 $this->setMethod($route->get('method'));
                 $this->setPermission($route->get('permission', ''));
 
-                if ($route->hasKey('param')) {
+                if ($route->get('param')) {
                     $route_params = $route->get('param');
 
                     foreach ($route_params as $key) {

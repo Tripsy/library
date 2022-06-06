@@ -8,7 +8,7 @@
 
 namespace Tripsy\Library\Database;
 
-abstract class Connection
+interface Connection
 {
-    abstract public function table(string $name): string;
+    public function table(string $name): string;
 }

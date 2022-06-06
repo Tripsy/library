@@ -8,17 +8,24 @@
 
 namespace Tripsy\Library\Log;
 
-use Tripsy\Library\Config;
-
 class LogFile extends Logger
 {
-    private Config $cfg;
+    private string $pathLogs;
 
-    public function __construct(Config $cfg)
+    public function __construct(string $pathLogs)
     {
-        $this->cfg = $cfg;
+        $this->pathLogs = $pathLogs;
     }
 
+    /**
+     * Write to log file
+     *
+     * @param string $label
+     * @param string $message
+     * @param array $context
+     * @return void
+     * @throws LogException
+     */
     public function record(string $label, string $message, array $context): void
     {
         $content = date('Y-m-d H:i') . ' .::. ';
@@ -55,10 +62,17 @@ class LogFile extends Logger
         fclose($file_stream);
     }
 
+    /**
+     * Get log file path; Create log file if it does not exist
+     *
+     * @param string $file_name
+     * @return string
+     * @throws LogException
+     */
     private function getFilePath(string $file_name): string
     {
         $file_name = strtolower($file_name) . '.log';
-        $file_path = $this->cfg->get('path.logs') . '/' . $file_name;
+        $file_path = $this->pathLogs . '/' . $file_name;
 
         //Create log file if it doesn't exist.
         if (!file_exists($file_path)) {

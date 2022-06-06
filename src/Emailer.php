@@ -8,17 +8,20 @@
 
 namespace Tripsy\Library;
 
+use Ds\Map;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
+use Tripsy\Library\Exceptions\ConfigException;
 use Tripsy\Library\Exceptions\EmailException;
+use Tripsy\Library\Standard\ObjectTools;
 use Tripsy\Library\Standard\StringTools;
 
 class Emailer
 {
-    private Config $cfg;
+    private Map $config;
 
     private string $layout = '';
     private Address $from;
@@ -31,13 +34,25 @@ class Emailer
     private array $vars = [];
     private array $attachment = [];
     private array $embed = [];
+    
 
-    public function __construct(Config $cfg)
+    /**
+     * @throws ConfigException
+     */
+    public function __construct(array $settings)
     {
-        $this->cfg = $cfg;
-
-        $this->setFrom($this->cfg->get('site.email'), $this->cfg->get('site.name'));
-        $this->setReplyTo($this->cfg->get('site.email'), $this->cfg->get('site.name'));
+        $this->config = ObjectTools::data($settings, [
+            'from.email' => 'string',
+            'from.name' => 'string',
+            'smtp.host' => 'string',
+            'smtp.port' => 'int',
+            'smtp.username' => 'string',
+            'smtp.password' => 'string',
+            'debug' => 'bool',
+        ]);        
+        
+        $this->setFrom($this->config->get('from.email'), $this->config->get('from.name'));
+        $this->setReplyTo($this->config->get('from.email'), $this->config->get('from.name'));
     }
 
     public function setLayout(string $path): self
@@ -197,11 +212,11 @@ class Emailer
 
     private function getSmtpDsn(): string //https://symfony.com/doc/4.4/reference/configuration/swiftmailer.html
     {
-        $host = $this->cfg->get('mail.smtp.host');
-        $port = $this->cfg->get('mail.smtp.port');
-        $username = urlencode($this->cfg->get('mail.smtp.username'));
-        $password = urlencode($this->cfg->get('mail.smtp.password'));
-        $disable_delivery = $this->cfg->get('mail.debug');
+        $host = $this->config->get('smtp.host');
+        $port = $this->config->get('smtp.port');
+        $username = urlencode($this->config->get('smtp.username'));
+        $password = urlencode($this->config->get('smtp.password'));
+        $disable_delivery = $this->config->get('debug');
 
         return 'smtp://' . $username . ':' . $password . '@' . $host . ':' . $port . '/?timeout=60&encryption=ssl&auth_mode=login&disable_delivery=' . $disable_delivery;
     }
